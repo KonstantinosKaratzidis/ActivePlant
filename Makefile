@@ -16,7 +16,7 @@ endif
 MCU = atmega328p
 MCU_PLATFORM = avr
 F_CPU = 16000000UL
-BAUD = 19200UL # default to be used if not set in config.h
+BAUD = 9600UL # default to be used if not set in config.h
 
 AVRDUDE_PROG_TYPE = usbasp
 AVRDUDE_PARTNO = m328p
