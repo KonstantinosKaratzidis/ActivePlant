@@ -1,0 +1,54 @@
+I/O (low level interaction with mcu functions, HAL)
+	- water pump
+	- moisture sensor
+	- water level
+	- ble_uart
+	
+	These should be abstracted to a reasonable degree
+
+	class Device:
+		virtual init()
+		virtual sleep()
+		virtual wakeup()
+
+	class Pump: Device
+		open
+		close
+		state
+
+	Moisture: Device
+		read()
+
+	ble_uart: Device
+		has_data()
+		write(buf, size, timeout = 0)
+		read(buf, size, timeout = 0)
+	
+	time: Device
+
+Current state
+	- water level
+	- moisture
+
+Settings:
+	- desired water level
+
+Protocol:
+	- abstracts the protocol away in a way that the main application
+	  control does not need to take it into account
+
+Application loop:
+	* boot / reboot / wake up
+		- if needed do necessary initializations
+	* gather state
+
+	* decide wether or not to open the pump or
+	  if no water in the tank, send message about it
+
+	main():
+		devices.init()
+		loop():
+			state.update()
+			do_action(state, settings)
+			log()
+			wait for next tick()

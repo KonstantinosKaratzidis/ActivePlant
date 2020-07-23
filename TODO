@@ -1,0 +1,25 @@
+time the analog conversion rate
+make a timer for time keeping
+
+write the packet class
+
+
+Packet:
+
+9 reserved
+8 reserved
+7 reserved
+6 reserved
+5 receiver
+4 flags
+3 register address
+2 empty
+1 data_high
+0 data_low
+
+struct message {
+	// fields needed
+	// ...
+
+	message(array of 10 bytes)
+}
