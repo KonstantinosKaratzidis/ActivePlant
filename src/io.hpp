@@ -9,10 +9,12 @@ class Device;
 class Pump;
 class Moisture;
 class Usart;
+class Timer;
 
 extern Pump pump;
 extern Moisture moisture;
 extern Usart usart;
+extern Timer timer;
 
 // initialize all devices
 // this function needs to be called before any device is used
@@ -20,9 +22,9 @@ void init_devices();
 
 class Device {
 	public:
-	virtual void init();
-	virtual void sleep();
-	virtual void wakeup();
+	virtual void init(){}
+	virtual void sleep(){}
+	virtual void wakeup(){}
 };
 
 class Pump : public Device {
@@ -91,6 +93,20 @@ class Usart : public Device {
 
 	// register a cb to be called every time there is a new character
 	void register_rx_cb(rx_cb_t rx_cb);
+};
+
+class Timer : public Device {
+public:
+	void init() override;
+
+	void reset();
+	void stop();
+	void start();
+	uint16_t get_ticks();
+	void _tick();
+private:
+	uint16_t _ticks = 0;
+	bool _running = false;
 };
 
 #endif // PRD_IO_HPP

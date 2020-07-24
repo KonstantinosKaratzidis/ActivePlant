@@ -3,6 +3,7 @@
 #include <avr/interrupt.h>
 #include "config.h"
 #include "io.hpp"
+#include "debug.hpp"
 
 //
 //                              class Pump
@@ -65,11 +66,10 @@ uint16_t Moisture::read(){
 }
 
 void Moisture::update(uint16_t sample){
-	pump.open();
 	samples_sum -= samples[sample_index];
 	samples_sum += sample;
 	samples[sample_index] = sample;
-	sample_index = (sample_index + 1) % ADC_BUF_SZ;
+	sample_index = (sample_index + 1) & ADC_BUF_SZ;
 }
 
 void Moisture::enable_interrupt(){
@@ -158,4 +158,45 @@ void Usart::write(const char *buf, size_t size){
 
 void Usart::register_rx_cb(rx_cb_t rx_cb){
 	registered_rx_cb = rx_cb;
+}
+
+//
+// Timer
+//
+
+void Timer::init(){
+	// enable interrupt on output compare register
+	TIMSK0 |= (1 << OCIE0A);
+	OCR0A = 156;
+
+	// set wave generation, clear timer on compare match
+	TCCR0A |= (1 << WGM01) | (0 << WGM00);
+	TCCR0B |= (0 << WGM02);
+	start();
+}
+
+void Timer::stop(){
+	if(_running)
+		TCCR0B &= 0b11111000;
+}
+
+void Timer::start(){
+	if(!_running)
+		// prescaler at 1024
+		TCCR0B |= (1 << CS02) | (1 << CS00);
+}
+
+void Timer::reset(){
+	stop();
+	_ticks = 0;
+	start();
+}
+
+void Timer::_tick(){
+	//test_pin.toggle();
+	_ticks++;
+}
+
+uint16_t Timer::get_ticks(){
+	return _ticks;
 }

@@ -4,17 +4,22 @@
 Pump pump;
 Moisture moisture;
 Usart usart;
+Timer timer;
 
 ISR(ADC_vect){
 	moisture.update(ADC);
 	ADCSRA |= (1 << ADSC);
 }
 
+ISR(TIMER0_COMPA_vect){
+	timer._tick();
+}
 
 Device *devices[] = {
 	&pump,
 	&moisture,
 	&usart,
+	&timer,
 	nullptr
 };
 
