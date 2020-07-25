@@ -19,8 +19,8 @@ void print(uint16_t num){
 
 char buf[4] = {(char) 0xff, (char) 0xff};
 void send_sample(uint16_t sample){
-	buf[2] = sample >> 8;
-	buf[3] = sample & 0xff;
+	buf[2] = sample & 0xff;
+	buf[3] = sample >> 8;
 	usart.write(buf, 4);
 }
 
@@ -33,10 +33,10 @@ int main(){
 	sei();
 	test_pin.init();
 	while(1){
-		//send_sample(moisture.read());
 		if(timer.get_ticks() >= 100){
 			timer.reset();
 			test_pin.toggle();
+			send_sample(moisture.read());
 		}
 	}
 	return 0;
