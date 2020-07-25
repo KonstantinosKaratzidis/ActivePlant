@@ -59,17 +59,13 @@ void Moisture::start_conversion(){
 uint16_t Moisture::read(){
 	// start a conversion
 	return samples_sum / ADC_BUF_SZ;
-	// ADCSRA |= (1 << ADSC);
-	// while(ADCSRA & (1 << ADSC))
-	// 	; // wait for conversion to complete
-	// return ADC;
 }
 
 void Moisture::update(uint16_t sample){
 	samples_sum -= samples[sample_index];
 	samples_sum += sample;
 	samples[sample_index] = sample;
-	sample_index = (sample_index + 1) & ADC_BUF_SZ;
+	sample_index = (sample_index + 1) % ADC_BUF_SZ;
 }
 
 void Moisture::enable_interrupt(){
