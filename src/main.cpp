@@ -10,12 +10,16 @@ Pump pump;
 Moisture moisture;
 Usart usart;
 Timer timer;
+TestPin test_pin;
+DebugUart debug;
 
 Device *devices[] = {
 	&pump,
 	&moisture,
 	&usart,
 	&timer,
+	&test_pin,
+	&debug,
 	nullptr
 };
 
@@ -56,16 +60,16 @@ void send_sample(uint16_t sample){
 
 void init(){
 	init_devices();
-	test_pin.init();
+	sei();
 }
 
 int main(){
 	init();
-	sei();
 	while(1){
 		if(timer.get_ticks() >= 100){
 			timer.reset();
 			send_sample(moisture.read());
+			debug.printf("moisture: %d\r\n", moisture.read());
 		}
 	}
 	return 0;
