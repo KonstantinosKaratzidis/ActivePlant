@@ -73,8 +73,8 @@ void Moisture::enable_interrupt(){
 }
 
 void Moisture::set_reference(){
-	// set reference to AVcc
-	ADMUX |= (1 << REFS0);
+	ADMUX &= 0x3f; // AREF
+	//ADMUX |= (1 << REFS0); // AVcc
 }
 
 void Moisture::set_channel(uint8_t chn){

@@ -26,16 +26,15 @@ void send_sample(uint16_t sample){
 
 void init(){
 	init_devices();
+	test_pin.init();
 }
 
 int main(){
 	init();
 	sei();
-	test_pin.init();
 	while(1){
 		if(timer.get_ticks() >= 100){
 			timer.reset();
-			test_pin.toggle();
 			send_sample(moisture.read());
 		}
 	}
