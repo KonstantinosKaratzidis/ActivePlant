@@ -11,6 +11,4 @@ public:
 	void init() override;
 };
 
-extern TestPin test_pin;
-
 #endif // PRD_DEBUG_H

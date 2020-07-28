@@ -5,17 +5,6 @@
 #include <stddef.h>
 #include "config.h"
 
-class Device;
-class Pump;
-class Moisture;
-class Usart;
-class Timer;
-
-extern Pump pump;
-extern Moisture moisture;
-extern Usart usart;
-extern Timer timer;
-
 // initialize all devices
 // this function needs to be called before any device is used
 void init_devices();
