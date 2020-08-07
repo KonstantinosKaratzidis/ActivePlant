@@ -17,6 +17,7 @@ MCU = atmega328p
 MCU_PLATFORM = avr
 F_CPU = 16000000UL
 BAUD = 9600UL # default to be used if not set in config.h
+DEBUG_BAUD = 19200UL
 
 AVRDUDE_PROG_TYPE = usbasp
 AVRDUDE_PARTNO = m328p
@@ -61,7 +62,7 @@ OBJDUMP = avr-objdump
 SIZE = avr-size
 
 ARCH_FLAGS = -mmcu=$(MCU)
-ARCH_CPPFLAGS = -DF_CPU=$(F_CPU) -DBAUD=$(BAUD)
+ARCH_CPPFLAGS = -DF_CPU=$(F_CPU) -DBAUD=$(BAUD) -DDEBUG_BAUD=$(DEBUG_BAUD)
 ARCH_LDFLAGS = -mmcu=$(MCU)
 ARCH_CFLAGS = -mmcu=$(MCU)
 ARCH_CXXFLAGS = -mmcu=$(MCU)
