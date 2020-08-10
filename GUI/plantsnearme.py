@@ -14,18 +14,18 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(867, 626)
+        MainWindow.resize(800, 600)
         MainWindow.setStyleSheet("")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.pushButton1 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton1.setGeometry(QtCore.QRect(20, 110, 821, 71))
+        self.pushButton1.setGeometry(QtCore.QRect(20, 110, 731, 71))
         self.pushButton1.setStyleSheet("color: rgb(255, 255, 255);\n"
 "background-color: rgb(80, 168, 78);\n"
 "font: 75 14pt \"Corbel\";")
         self.pushButton1.setObjectName("pushButton1")
         self.pushButton1_2 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton1_2.setGeometry(QtCore.QRect(20, 190, 821, 71))
+        self.pushButton1_2.setGeometry(QtCore.QRect(20, 190, 731, 71))
         self.pushButton1_2.setStyleSheet("color: rgb(255, 255, 255);\n"
 "background-color: rgb(80, 168, 78);\n"
 "font: 75 14pt \"Corbel\";")
@@ -37,7 +37,7 @@ class Ui_MainWindow(object):
 "font: 75 12pt \"Corbel\";")
         self.connectionlabel.setObjectName("connectionlabel")
         self.developedbylabel = QtWidgets.QLabel(self.centralwidget)
-        self.developedbylabel.setGeometry(QtCore.QRect(610, 20, 231, 71))
+        self.developedbylabel.setGeometry(QtCore.QRect(520, 20, 231, 71))
         self.developedbylabel.setStyleSheet("font: italic 9pt \"Arial\";")
         self.developedbylabel.setObjectName("developedbylabel")
         MainWindow.setCentralWidget(self.centralwidget)

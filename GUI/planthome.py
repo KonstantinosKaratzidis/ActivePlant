@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_planthomeWindow(object):
     def setupUi(self, planthomeWindow):
         planthomeWindow.setObjectName("planthomeWindow")
-        planthomeWindow.resize(800, 600)
+        planthomeWindow.resize(728, 504)
         self.centralwidget = QtWidgets.QWidget(planthomeWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.plantnamelabel1 = QtWidgets.QLabel(self.centralwidget)
@@ -49,31 +49,31 @@ class Ui_planthomeWindow(object):
         self.wateringplan3.setGeometry(QtCore.QRect(40, 230, 291, 31))
         self.wateringplan3.setStyleSheet("font: 75 14pt \"Calibri\";")
         self.wateringplan3.setObjectName("wateringplan3")
-        self.pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton.setGeometry(QtCore.QRect(30, 280, 421, 41))
-        self.pushButton.setStyleSheet("font: 13.5pt \"Calibri\";\n"
+        self.changebutton = QtWidgets.QPushButton(self.centralwidget)
+        self.changebutton.setGeometry(QtCore.QRect(30, 280, 421, 41))
+        self.changebutton.setStyleSheet("font: 13.5pt \"Calibri\";\n"
 "background-color: rgb(195, 225, 182);\n"
 "\n"
 "color: rgb(255, 255, 255);\n"
 "")
-        self.pushButton.setObjectName("pushButton")
+        self.changebutton.setObjectName("changebutton")
         self.line = QtWidgets.QFrame(self.centralwidget)
         self.line.setGeometry(QtCore.QRect(30, 350, 611, 16))
         self.line.setFrameShape(QtWidgets.QFrame.HLine)
         self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line.setObjectName("line")
-        self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_2.setGeometry(QtCore.QRect(590, 30, 71, 71))
-        self.pushButton_2.setStyleSheet("background-color: rgb(216, 255, 211);")
-        self.pushButton_2.setText("")
+        self.homebutton = QtWidgets.QPushButton(self.centralwidget)
+        self.homebutton.setGeometry(QtCore.QRect(590, 30, 71, 71))
+        self.homebutton.setStyleSheet("background-color: rgb(216, 255, 211);")
+        self.homebutton.setText("")
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap("../../Downloads/ico_breadcrumb_home_off.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.pushButton_2.setIcon(icon)
-        self.pushButton_2.setIconSize(QtCore.QSize(50, 50))
-        self.pushButton_2.setObjectName("pushButton_2")
+        self.homebutton.setIcon(icon)
+        self.homebutton.setIconSize(QtCore.QSize(50, 50))
+        self.homebutton.setObjectName("homebutton")
         planthomeWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(planthomeWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 694, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 728, 21))
         self.menubar.setObjectName("menubar")
         self.menuFirst_tab = QtWidgets.QMenu(self.menubar)
         self.menuFirst_tab.setObjectName("menuFirst_tab")
@@ -97,7 +97,7 @@ class Ui_planthomeWindow(object):
         self.wateringplan1.setText(_translate("planthomeWindow", "Current Watering Plan:"))
         self.wateringplan2.setText(_translate("planthomeWindow", "Scheduled watering"))
         self.wateringplan3.setText(_translate("planthomeWindow", "Every 7 day(s), 200 ml"))
-        self.pushButton.setText(_translate("planthomeWindow", "Change the watering plan"))
+        self.changebutton.setText(_translate("planthomeWindow", "Change the watering plan"))
         self.menuFirst_tab.setTitle(_translate("planthomeWindow", "Home"))
 
 
