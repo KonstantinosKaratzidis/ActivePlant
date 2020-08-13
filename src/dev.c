@@ -139,7 +139,7 @@ ISR(TIMER0_COMPA_vect){
 void test_pin_init(){ TEST_DDR |= _BV(TEST_PIN); }
 void test_pin_open(){ TEST_PORT |= _BV(TEST_PIN); }
 void test_pin_close(){ TEST_PORT &= ~_BV(TEST_PIN); }
-void test_pin_toggle(){ TEST_PORT ^= ~_BV(TEST_PIN); }
+void test_pin_toggle(){ TEST_PORT ^= _BV(TEST_PIN); }
 pin_state_t test_pin_state(){
 	return bit_is_set(TEST_PORT, TEST_PIN) ? HIGH : LOW;
 }
