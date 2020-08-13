@@ -13,6 +13,7 @@ def Settings(**kwargs):
         "-I", relative("."),
         "-DMCU=atmega328p",
         "-DF_CPU=16000000UL",
+        "-DBAUD=9600UL",
         "-D__AVR_ATmega328P__",
         "-D__AVR_DEVICE_NAME__=atmega328p",
         "-Wno-unknown-attributes"
