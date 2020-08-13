@@ -9,10 +9,10 @@
  */
 
 // TODO: get an actual magic number
-#define COMM_MAGIC0 0xde
-#define COMM_MAGIC1 0xad
-#define COMM_MAGIC2 0xde
-#define COMM_MAGIC3 0xed
+#define COMM_MAGIC0 0xfe
+#define COMM_MAGIC1 0x00
+#define COMM_MAGIC2 0x00
+#define COMM_MAGIC3 0x00
 
 #define COMM_FLAG_ERR (1 << 0)
 #define COMM_FLAG_RESP (1 << 1)
