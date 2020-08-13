@@ -25,10 +25,9 @@ void water_level_cb(const packet_t *req){
 }
 
 void moisture_cb(const packet_t *req){
-	WARN_UNIMPLEMENTED();
-	uint16_t moisture_raw = moisture_read_raw();
-	dprintf("moisture: %d\r\n", moisture_raw);
-	comm_send_ok(req, moisture_raw);
+	uint16_t moisture = moisture_read();
+	dprintf("moisture: %d\r\n", moisture);
+	comm_send_ok(req, moisture);
 }
 
 void moisture_wanted_cb(const packet_t *req){

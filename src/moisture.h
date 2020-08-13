@@ -6,6 +6,6 @@
 uint16_t moisture_read_raw();
 
 // normalized (linearly increasing) value
-uint16_t moisture_read_norm();
+uint16_t moisture_read();
 
 #endif
