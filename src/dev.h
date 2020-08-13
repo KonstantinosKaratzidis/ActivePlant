@@ -56,7 +56,7 @@ void uart_writeb(uint8_t byte);
 void uart_write(const char *buf, size_t len);
 
 // hook function executed upon receive interrupt
-void _FUNC_HOOK uart_recv_hook(uint8_t byte);
+void uart_recv_hook(uint8_t byte);
 
                                                           /*-------------*/
                                                           /* === ADC === */
@@ -69,7 +69,7 @@ void adc_init();
 
 // define this function to set a hook, which will get called
 // every time there is a new sample
-void _FUNC_HOOK adc_new_sample_hook(uint16_t sample);
+void adc_new_sample_hook(uint16_t sample);
 
 
                                                         /* --------------*/
@@ -87,7 +87,7 @@ void timer_start();
 void timer_stop();
 
 // define this function, it will called on each timer tick
-void _FUNC_HOOK timer_tick_hook();
+void timer_tick_hook();
 
                                                     /* -----------------*/
                                                     /* === Test Pin === */

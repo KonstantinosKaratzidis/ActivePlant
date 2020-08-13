@@ -38,6 +38,6 @@ void comm_init(uint8_t own_address);
 bool comm_get_packet(packet_t *packet);
 
 // hook function for when there is no space in the receive queue
-void _FUNC_HOOK comm_queue_full_hook();
+void comm_queue_full_hook();
 
 #endif // ACTIVEPLANT_COMM_H
