@@ -69,3 +69,7 @@ done:
 	unlock();
 	return success;
 }
+
+void _FUNC_HOOK comm_queue_full_hook(){
+	dprintf("receive queue is full\r\n");
+}
