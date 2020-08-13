@@ -25,30 +25,60 @@ void init(){
 	comm_init(COMM_ADDRESS);
 }
 
+void log_status(){}
+
 #define PERIOD (TICKS_PER_SECOND / 4)
+
+typedef enum {
+	CAN_INSPECT,
+	PUMP_ON, // has opened the pump
+	AFTER_WATER // just after watering, waiting for a certain period
+} watering_state_t;
+
+void moisture_control(){
+	static watering_state_t state = CAN_INSPECT;
+
+	switch(state){
+	case CAN_INSPECT:
+	{
+		// TODO: read water level here
+		if(moisture_read() < settings_get_moisture_wanted()){
+			pump_open();
+			state = PUMP_ON;
+			interval_set(INTERVAL_PUMP, millis_to_ticks(3000));
+		}
+		break;
+	}
+	case PUMP_ON:
+	{
+		if(interval_has_passed(INTERVAL_PUMP)){
+			pump_close();
+			state = AFTER_WATER;
+		}
+	}
+	case AFTER_WATER:
+	{
+		if(interval_has_passed(INTERVAL_WATER_STABILIZE))
+			state = CAN_INSPECT;
+		break;
+	}
+	}
+}
 
 int main(){
 	init();
+	interval_set(INTERVAL_LOG, millis_to_ticks(settings_get_log_interval() * 1000));
+	interval_set(INTERVAL_WATER, millis_to_ticks(settings_get_water_interval() * 1000));
 	enable_interrupts();
-	interval_set(INTERVAL_LOG, millis_to_ticks(2000));
-	process_request(NULL);
 
-	char buf[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-	for(int i = 0; i < 10; i++){
-		buf[i] += 10;
-	}
-
-	while(1){
-		packet_t msg;
+	packet_t msg;
+	while(1){ 
 		if(comm_get_packet(&msg)){
-			if(msg.dst != COMM_ADDRESS){
-				dprintf("dst not correct\r\n");
-				dprintf("was %02x\r\n", msg.dst);
-			} else {
-				dprintf("received packet\r\n");
-				uart_write(buf, 10);
-			}
+			process_request(&msg);
 		}
+
+		moisture_control();
+
 		idle();
 	}
 }

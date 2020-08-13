@@ -34,6 +34,8 @@ started   |       "unread"       |         |     "unread"     |
 // add a new id, and call interval_set
 typedef enum {
 	INTERVAL_WATER, // used for watering the plant
+	INTERVAL_WATER_STABILIZE,   // period to wait for moisture reading to stabilize after watering
+	INTERVAL_PUMP, // used for controlling the pump
 	INTERVAL_LOG,   // used for logging
 	// ONLY ADD NEW INTERVALS OVER THIS LINE
 	_INTERVAL_NUM   // used internally to allocate space for each interval
