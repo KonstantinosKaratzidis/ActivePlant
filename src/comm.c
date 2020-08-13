@@ -9,8 +9,6 @@
 #error "COMM_QUEUE_ENTRIES not defined"
 #endif
 
-static uint8_t self_address;
-
 // buffer for receiving a single buffer
 static uint8_t recv_buf[10];
 static uint8_t recv_buf_idx = 0;
@@ -23,7 +21,7 @@ static int queue_read_idx = 0;  // next readable index
 static int queue_num_free = COMM_QUEUE_ENTRIES;
 
 void comm_init(uint8_t addr){
-	self_address = addr;
+	// empty
 }
 
 // this function is called inside an interrupt
@@ -72,4 +70,24 @@ done:
 
 void _FUNC_HOOK comm_queue_full_hook(){
 	dprintf("receive queue is full\r\n");
+}
+
+void comm_send_packet(
+		uint8_t dst,
+		uint8_t flags,
+		uint8_t reg,
+		uint16_t data)
+{
+	packet_t packet = STATIC_PACKET_INIT(COMM_ADDRESS, dst, flags, reg, data);
+	uart_write((const char *) &packet, 10);
+}
+
+void comm_send_ok(const packet_t *request, uint16_t data){
+	comm_send_packet(request->src, (1 << COMM_FLAG_RESP), request->reg, data);
+}
+
+void comm_send_error(const packet_t *request, uint16_t errno){
+	comm_send_packet(
+			request->src, (1 << COMM_FLAG_RESP) | (1 << COMM_FLAG_ERR),
+			request->reg, errno);
 }
