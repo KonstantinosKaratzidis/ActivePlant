@@ -28,3 +28,9 @@ void adc_new_sample_hook(uint16_t sample){
 uint16_t moisture_read_raw(){
 	return sum / FILTER_SZ;
 }
+
+
+uint16_t moisture_read_norm(){
+	uint16_t raw = moisture_read_raw();
+	return 1023 - raw;
+}
