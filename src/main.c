@@ -23,6 +23,56 @@ void init(){
 	comm_init(COMM_ADDRESS);
 }
 
+// callback executed upon receiving a packet
+typedef void (*comm_req_cb)(const packet_t*);
+
+void invalid_op_cb(const packet_t *req){
+	comm_send_error(req, COMM_ERR_INVAL_OP);
+}
+
+comm_req_cb comm_callbacks[REG_NUM_REGS] = {
+	[REG_PING] = NULL,
+	[REG_PONG] = invalid_op_cb,
+	[REG_WATER_LEVEL] = NULL,
+	[REG_MOISTURE] = NULL,
+	[REG_MOISTURE_WANTED] = NULL,
+	[REG_WATER_INTERVAL] = NULL,
+	[REG_LOG_INTERVAL] = NULL,
+};
+
+void process_request(const packet_t *req){
+	const uint8_t *req_magic = req->magic;
+
+	if( // if no match -> not a package for us
+			(req_magic[0] != COMM_MAGIC0) ||
+			(req_magic[1] != COMM_MAGIC1) ||
+			(req_magic[2] != COMM_MAGIC2) ||
+			(req_magic[3] != COMM_MAGIC3)
+	){
+		dprintf("invalid magic\r\n");
+		return;
+	}
+
+	// if not addressed to us
+	if(req->dst != COMM_ADDRESS){
+		dprintf("packet not addressed to us\r\n");
+		return;
+	}
+
+	// if invalid reg
+	if(req->reg >= REG_NUM_REGS){
+		dprintf("invalid register: %d\r\n", req->reg);
+		return comm_send_error(req, COMM_ERR_INVAL_REG);
+	}
+
+	comm_req_cb callback = comm_callbacks[req->reg];
+	if(callback == NULL){
+		dprintf("callback undefined\r\n");
+		return comm_send_error(req, COMM_ERR_UNKNOWN);
+	}
+	callback(req);
+}
+
 #define PERIOD (TICKS_PER_SECOND / 4)
 
 int main(){

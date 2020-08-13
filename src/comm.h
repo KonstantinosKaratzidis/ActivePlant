@@ -23,6 +23,18 @@
 #define COMM_ERR_UNKNOWN (1 << 0) // unknown error
 #define COMM_ERR_NO_REG (1 << 1) // register does not exist
 #define COMM_ERR_INVAL_OP (1 << 2) // invalid operation (eg setting moisture)
+#define COMM_ERR_INVAL_REG (1 << 2) // invalid register (eg doesnt exist)
+
+typedef enum {
+	REG_PING = 0,
+	REG_PONG,
+	REG_WATER_LEVEL,
+	REG_MOISTURE,
+	REG_MOISTURE_WANTED,
+	REG_WATER_INTERVAL,
+	REG_LOG_INTERVAL,
+	REG_NUM_REGS
+} reg_t;
 
 typedef struct {
 	uint8_t magic[4]; 
@@ -49,16 +61,6 @@ typedef struct {
 		((uint8_t)(data & 0xff)), \
 		((uint8_t)((data >> 8) & 0xff)) \
 	}
-
-typedef enum {
-	REG_PING,
-	REG_PONG,
-	REG_WATER_LEVEL,
-	REG_MOISTURE,
-	REG_MOISTURE_WANTED,
-	REG_WATER_INTERVAL,
-	REG_LOG_INTERVAL
-} reg_t;
 
 // just in case, will not compile if sizeof(packet_t) != 10
 typedef char
