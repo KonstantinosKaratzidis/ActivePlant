@@ -15,17 +15,18 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
-        MainWindow.setStyleSheet("")
+        MainWindow.setStyleSheet("background-color: rgb(255, 255, 255);\n"
+"")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.pushButton1 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton1.setGeometry(QtCore.QRect(20, 110, 731, 71))
+        self.pushButton1.setGeometry(QtCore.QRect(20, 110, 641, 71))
         self.pushButton1.setStyleSheet("color: rgb(255, 255, 255);\n"
 "background-color: rgb(80, 168, 78);\n"
 "font: 75 14pt \"Corbel\";")
         self.pushButton1.setObjectName("pushButton1")
         self.pushButton1_2 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton1_2.setGeometry(QtCore.QRect(20, 190, 731, 71))
+        self.pushButton1_2.setGeometry(QtCore.QRect(20, 190, 641, 71))
         self.pushButton1_2.setStyleSheet("color: rgb(255, 255, 255);\n"
 "background-color: rgb(80, 168, 78);\n"
 "font: 75 14pt \"Corbel\";")
@@ -40,9 +41,15 @@ class Ui_MainWindow(object):
         self.developedbylabel.setGeometry(QtCore.QRect(520, 20, 231, 71))
         self.developedbylabel.setStyleSheet("font: italic 9pt \"Arial\";")
         self.developedbylabel.setObjectName("developedbylabel")
+        self.waterlevellabel = QtWidgets.QLabel(self.centralwidget)
+        self.waterlevellabel.setGeometry(QtCore.QRect(680, 110, 61, 71))
+        self.waterlevellabel.setText("")
+        self.waterlevellabel.setPixmap(QtGui.QPixmap("../../Downloads/jpg2png/half.png"))
+        self.waterlevellabel.setScaledContents(True)
+        self.waterlevellabel.setObjectName("waterlevellabel")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 867, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
