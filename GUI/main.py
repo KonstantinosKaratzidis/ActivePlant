@@ -85,7 +85,7 @@ class Packet(namedtuple("PacketTuple", ["src", "dst", "flags", "reg", "data"])):
 class Register:
     def __init__(self, name, writable, reg_addresses):
         self.name = name
-        self.is_writable = writable
+        self.writable = writable
 
         if not (1 <= len(reg_addresses) <= 2):
             msg = "A value can be contained in only one or two registers, "
@@ -101,7 +101,7 @@ class Register:
         return self.writable
 
     def check_in_range(self, value):
-        if self.is_multipart():
+        if not self.is_multipart():
             return value & 0xffff == value
         else:
             return value & 0xffffffff == value
@@ -134,8 +134,8 @@ class Connection:
             raise ValueError(msg)
 
         if register.is_multipart():
-            resp_low = self.send(register.addresses[0], True, value & 0xfffff)
-            resp_high = self.send(register.addresses[1], True, (value >> 16) & 0xfffff)
+            resp_low = self.send(register.addresses[0], True, value & 0xffff)
+            resp_high = self.send(register.addresses[1], True, (value >> 16) & 0xffff)
             print("multipart write", resp_low, resp_high)
 
         else:
@@ -200,4 +200,11 @@ if __name__ == "__main__":
     port = serial.Serial("/dev/ttyUSB1", 9600, timeout = 1)
     conn = Connection(0x01, 0xa0, port)
 
-    print(conn.read(REG_LOG_INTERVAL))
+    print(REG_LOG_INTERVAL.is_multipart())
+    print(REG_LOG_INTERVAL.check_in_range(70000))
+    while True:
+        try:
+            print(conn.read(REG_LOG_INTERVAL))
+            break
+        except ResponseTimeout:
+            print("timeout, retrying ...")
