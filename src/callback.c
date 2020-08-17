@@ -7,6 +7,18 @@
 
 #define WARN_UNIMPLEMENTED() {dprintf("UNIMPLEMTED %s %d\r\n", __FILE__, __LINE__);} while(0)
 
+#define FLAG_IS_READ(flags) (((flags) & COMM_FLAG_WRITE) == 0)
+#define FLAG_IS_WRITE(flags) ((flags) & COMM_FLAG_WRITE)
+
+// helper macro, called inside callbacks for registers that do not accept
+// write operations
+#define deny_write(req) \
+	do{\
+		if(FLAG_IS_WRITE((req)->flags)){\
+			return invalid_op_cb((req));\
+		}\
+	}while(0)\
+
 // callback executed upon receiving a packet
 typedef void (*comm_req_cb)(const packet_t*);
 
@@ -16,17 +28,20 @@ void invalid_op_cb(const packet_t *req){
 }
 
 void ping_cb(const packet_t *req){
+	deny_write(req);
 	dprintf("got PING, send PONG\r\n");
 	comm_send_packet(req->src, COMM_FLAG_RESP, REG_PING, 0);
 }
 
 void water_level_cb(const packet_t *req){
+	deny_write(req);
 	WARN_UNIMPLEMENTED();
 	dprintf("send water level: %d\r\n", 0);
 	comm_send_ok(req, 0);
 }
 
 void moisture_cb(const packet_t *req){
+	deny_write(req);
 	uint16_t moisture = moisture_read();
 	dprintf("moisture: %d\r\n", moisture);
 	comm_send_ok(req, moisture);
@@ -38,28 +53,32 @@ void moisture_wanted_cb(const packet_t *req){
 	comm_send_ok(req, wanted);
 }
 
-void water_interval_low_cb(const packet_t *req){
-	uint16_t interval_low = settings_get_water_interval() & 0xffff;
-	dprintf("water interval low: %u\r\n", interval_low);
-	comm_send_ok(req, interval_low);
+void water_interval_cb(const packet_t *req){
+	dprintf("water inteval cb\r\n");
+	if(FLAG_IS_READ(req->flags)){
+		uint16_t value;
+		if(req->reg == REG_WATER_INTERVAL_LOW)
+			value = settings_get_water_interval() & 0xffff;
+		else
+			value = (settings_get_water_interval() >> 16) & 0xffff;
+		comm_send_ok(req, value);
+	} else {
+		dprintf("not implemented for write\r\n");
+	}
 }
 
-void water_interval_high_cb(const packet_t *req){
-	uint16_t interval_high = (settings_get_water_interval() >> 16) & 0xffff;
-	dprintf("water interval high: %u\r\n", interval_high);
-	comm_send_ok(req, interval_high);
-}
-
-void log_interval_low_cb(const packet_t *req){
-	uint16_t interval_low = settings_get_log_interval() & 0xffff;
-	dprintf("log interval low: %u\r\n", interval_low);
-	comm_send_ok(req, interval_low);
-}
-
-void log_interval_high_cb(const packet_t *req){
-	uint16_t interval_high = (settings_get_log_interval() >> 16) & 0xffff;
-	dprintf("log interval high: %u\r\n", interval_high);
-	comm_send_ok(req, interval_high);
+void log_interval_cb(const packet_t *req){
+	dprintf("log inteval cb\r\n");
+	if(FLAG_IS_READ(req->flags)){
+		uint16_t value;
+		if(req->reg == REG_LOG_INTERVAL_LOW)
+			value = settings_get_log_interval() & 0xffff;
+		else
+			value = (settings_get_log_interval() >> 16) & 0xffff;
+		comm_send_ok(req, value);
+	} else {
+		dprintf("not implemented for write\r\n");
+	}
 }
 
 comm_req_cb comm_callbacks[REG_NUM_REGS] = {
@@ -67,10 +86,10 @@ comm_req_cb comm_callbacks[REG_NUM_REGS] = {
 	[REG_WATER_LEVEL] = water_level_cb,
 	[REG_MOISTURE] = moisture_cb,
 	[REG_MOISTURE_WANTED] = moisture_wanted_cb,
-	[REG_WATER_INTERVAL_LOW] = water_interval_low_cb,
-	[REG_WATER_INTERVAL_HIGH] = water_interval_high_cb,
-	[REG_LOG_INTERVAL_LOW] = log_interval_low_cb,
-	[REG_LOG_INTERVAL_HIGH] = log_interval_high_cb,
+	[REG_WATER_INTERVAL_LOW] = water_interval_cb,
+	[REG_WATER_INTERVAL_HIGH] = water_interval_cb,
+	[REG_LOG_INTERVAL_LOW] = log_interval_cb,
+	[REG_LOG_INTERVAL_HIGH] = log_interval_cb,
 };
 
 void process_request(const packet_t *req){
