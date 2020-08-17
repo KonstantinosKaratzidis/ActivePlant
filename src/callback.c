@@ -24,9 +24,87 @@
 // callback executed upon receiving a packet
 typedef void (*comm_req_cb)(const packet_t*);
 
+//helper method
 static inline uint16_t get_data(const packet_t *packet){
 	return (packet->data_high << 8) | (packet->data_low);
 }
+
+// forward declarations of callback functions
+// in order to implement a new command:
+//   declare its callback functions below
+//   add it at the end of the comm_callbacks array
+static void ping_cb(const packet_t *);
+static void water_level_cb(const packet_t*);
+static void moisture_cb(const packet_t*);
+static void moisture_wanted_cb(const packet_t*);
+static void water_interval_cb(const packet_t*);
+static void water_interval_cb(const packet_t*);
+static void log_interval_cb(const packet_t*);
+static void log_interval_cb(const packet_t*);
+
+comm_req_cb comm_callbacks[REG_NUM_REGS] = {
+	[REG_PING] = ping_cb,
+	[REG_WATER_LEVEL] = water_level_cb,
+	[REG_MOISTURE] = moisture_cb,
+	[REG_MOISTURE_WANTED] = moisture_wanted_cb,
+	[REG_WATER_INTERVAL_LOW] = water_interval_cb,
+	[REG_WATER_INTERVAL_HIGH] = water_interval_cb,
+	[REG_LOG_INTERVAL_LOW] = log_interval_cb,
+	[REG_LOG_INTERVAL_HIGH] = log_interval_cb,
+};
+
+void process_request(const packet_t *req){
+	const uint8_t *req_magic = req->magic;
+
+	if( // if no match -> not a package for us
+			(req_magic[0] != COMM_MAGIC0) ||
+			(req_magic[1] != COMM_MAGIC1) ||
+			(req_magic[2] != COMM_MAGIC2) ||
+			(req_magic[3] != COMM_MAGIC3)
+	){
+		dprintf("invalid magic\r\n");
+		return;
+	}
+
+
+	#if COMM_LOG_PACKET
+	dprintf("recv: ");
+	for(int i = 0; i < 10; i++)
+		dprintf("0x%02x ", ((uint8_t *) req)[i]);
+	dprintf("\r\n");
+	dprintf("src=0x%02x (%d), ", req->src, req->src);
+	dprintf("dst=0x%02x (%d), ", req->dst, req->dst);
+	dprintf("flags=0x%02x (%d), ", req->flags, req->flags);
+	dprintf("reg=0x%02x (%d), ", req->reg, req->reg);
+	dprintf("data=0x%04x (%d)\r\n", req->data_high << 8 | req->data_low, req->data_high << 8 | req->data_low);
+	#endif
+
+	// if not addressed to us
+	if(req->dst != COMM_ADDRESS){
+		dprintf("packet not addressed to us\r\n");
+		return;
+	}
+
+	// if invalid reg
+	if(req->reg >= REG_NUM_REGS){
+		dprintf("invalid register: %d\r\n", req->reg);
+		return comm_send_error(req, COMM_ERR_INVAL_REG);
+	}
+
+	comm_req_cb callback = comm_callbacks[req->reg];
+	// callback should not be null as we already checked that it is
+	// in the correct range, but just to be certain we check it
+	// (otherwise callback could end up being some interrupt vector)
+	if(callback == NULL){
+		dprintf("callback undefined\r\n");
+		return comm_send_error(req, COMM_ERR_UNKNOWN);
+	}
+	callback(req);
+}
+
+                                                      /* ==================== */
+                                                      /* Callback Definitions */
+                                                      /* ==================== */
 
 static void invalid_op_cb(const packet_t *req){
 	dprintf("invalid operation\r\n");
@@ -59,12 +137,11 @@ static void moisture_wanted_cb(const packet_t *req){
 	comm_send_ok(req, wanted);
 }
 
+// TODO: in the future, if there seems to be a need for more multipart
+// values, the code will need to be refactored into more reusable units
 // For multipart writes the low part needs to be sent first
 // and then the high part. The write will have effect only after the
 // high part has been written
-// TODO: in the future, if there seems to be a need for more multipart
-// values, the code will need to be refactored into more reusable units
-
 static void water_interval_cb(const packet_t *req){
 	static uint16_t low_part = 0;
 	dprintf("water inteval cb\r\n");
@@ -133,62 +210,3 @@ static void log_interval_cb(const packet_t *req){
 	}
 }
 
-comm_req_cb comm_callbacks[REG_NUM_REGS] = {
-	[REG_PING] = ping_cb,
-	[REG_WATER_LEVEL] = water_level_cb,
-	[REG_MOISTURE] = moisture_cb,
-	[REG_MOISTURE_WANTED] = moisture_wanted_cb,
-	[REG_WATER_INTERVAL_LOW] = water_interval_cb,
-	[REG_WATER_INTERVAL_HIGH] = water_interval_cb,
-	[REG_LOG_INTERVAL_LOW] = log_interval_cb,
-	[REG_LOG_INTERVAL_HIGH] = log_interval_cb,
-};
-
-void process_request(const packet_t *req){
-	const uint8_t *req_magic = req->magic;
-
-	if( // if no match -> not a package for us
-			(req_magic[0] != COMM_MAGIC0) ||
-			(req_magic[1] != COMM_MAGIC1) ||
-			(req_magic[2] != COMM_MAGIC2) ||
-			(req_magic[3] != COMM_MAGIC3)
-	){
-		dprintf("invalid magic\r\n");
-		return;
-	}
-
-
-	#if COMM_LOG_PACKET
-	dprintf("recv: ");
-	for(int i = 0; i < 10; i++)
-		dprintf("0x%02x ", ((uint8_t *) req)[i]);
-	dprintf("\r\n");
-	dprintf("src=0x%02x (%d), ", req->src, req->src);
-	dprintf("dst=0x%02x (%d), ", req->dst, req->dst);
-	dprintf("flags=0x%02x (%d), ", req->flags, req->flags);
-	dprintf("reg=0x%02x (%d), ", req->reg, req->reg);
-	dprintf("data=0x%04x (%d)\r\n", req->data_high << 8 | req->data_low, req->data_high << 8 | req->data_low);
-	#endif
-
-	// if not addressed to us
-	if(req->dst != COMM_ADDRESS){
-		dprintf("packet not addressed to us\r\n");
-		return;
-	}
-
-	// if invalid reg
-	if(req->reg >= REG_NUM_REGS){
-		dprintf("invalid register: %d\r\n", req->reg);
-		return comm_send_error(req, COMM_ERR_INVAL_REG);
-	}
-
-	comm_req_cb callback = comm_callbacks[req->reg];
-	// callback should not be null as we already checked that it is
-	// in the correct range, but just to be certain we check it
-	// (otherwise callback could end up being some interrupt vector)
-	if(callback == NULL){
-		dprintf("callback undefined\r\n");
-		return comm_send_error(req, COMM_ERR_UNKNOWN);
-	}
-	callback(req);
-}
