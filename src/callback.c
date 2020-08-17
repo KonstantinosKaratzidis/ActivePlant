@@ -28,32 +28,32 @@ static inline uint16_t get_data(const packet_t *packet){
 	return (packet->data_high << 8) | (packet->data_low);
 }
 
-void invalid_op_cb(const packet_t *req){
+static void invalid_op_cb(const packet_t *req){
 	dprintf("invalid operation\r\n");
 	comm_send_error(req, COMM_ERR_INVAL_OP);
 }
 
-void ping_cb(const packet_t *req){
+static void ping_cb(const packet_t *req){
 	deny_write(req);
 	dprintf("got PING, send PONG\r\n");
 	comm_send_packet(req->src, COMM_FLAG_RESP, REG_PING, 0);
 }
 
-void water_level_cb(const packet_t *req){
+static void water_level_cb(const packet_t *req){
 	deny_write(req);
 	WARN_UNIMPLEMENTED();
 	dprintf("send water level: %d\r\n", 0);
 	comm_send_ok(req, 0);
 }
 
-void moisture_cb(const packet_t *req){
+static void moisture_cb(const packet_t *req){
 	deny_write(req);
 	uint16_t moisture = moisture_read();
 	dprintf("moisture: %d\r\n", moisture);
 	comm_send_ok(req, moisture);
 }
 
-void moisture_wanted_cb(const packet_t *req){
+static void moisture_wanted_cb(const packet_t *req){
 	uint16_t wanted = settings_get_moisture_wanted();
 	dprintf("moisture wanted: %d\r\n", wanted);
 	comm_send_ok(req, wanted);
@@ -65,7 +65,7 @@ void moisture_wanted_cb(const packet_t *req){
 // TODO: in the future, if there seems to be a need for more multipart
 // values, the code will need to be refactored into more reusable units
 
-void water_interval_cb(const packet_t *req){
+static void water_interval_cb(const packet_t *req){
 	static uint16_t low_part = 0;
 	dprintf("water inteval cb\r\n");
 
@@ -99,7 +99,7 @@ void water_interval_cb(const packet_t *req){
 	}
 }
 
-void log_interval_cb(const packet_t *req){
+static void log_interval_cb(const packet_t *req){
 	static uint16_t low_part = 0;
 	dprintf("log inteval cb\r\n");
 
