@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <avr/eeprom.h>
+#include "comm.h"
 #include "settings.h"
 #include "config.h"
 
@@ -9,6 +10,7 @@ typedef struct {
 	uint16_t moisture_bottom;
 	uint32_t water_interval;
 	uint32_t log_interval;
+	comm_addr_t comm_address;
 } __attribute__((packed)) settings_t;
 
 /* Taken from user from
@@ -27,8 +29,10 @@ static settings_t settings_eeprom EEMEM = {
 	.moisture_top = 0,
 	.moisture_bottom = 0,
 	.water_interval = 300,
-	.log_interval = 60
+	.log_interval = 60,
+	.comm_address = COMM_ADDRESS
 };
+
 // the address of a field in EEPROM
 #define setting_address(field) &((&settings_eeprom)->field)
 
@@ -81,4 +85,13 @@ uint32_t settings_get_log_interval(){
 void settings_set_log_interval(uint32_t value){
 	eeprom_update_dword(setting_address(log_interval), value);
 	settings.log_interval = value;
+}
+
+comm_addr_t settings_get_comm_address(){
+	return settings.comm_address;
+}
+
+void settings_set_comm_address(comm_addr_t addr){
+	eeprom_update_byte(setting_address(comm_address), addr);
+	settings.comm_address = addr;
 }

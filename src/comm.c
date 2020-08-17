@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 #include "config.h"
 #include "comm.h"
@@ -8,6 +9,17 @@
 #if !defined(COMM_QUEUE_ENTRIES)
 #error "COMM_QUEUE_ENTRIES not defined"
 #endif
+
+#define STATIC_PACKET_INIT(src, dst, flags, reg, data) \
+	{ \
+		{COMM_MAGIC0, COMM_MAGIC1, COMM_MAGIC2, COMM_MAGIC3}, \
+		(src), \
+		(dst), \
+		(flags), \
+		(reg), \
+		((uint8_t)(data & 0xff)), \
+		((uint8_t)((data >> 8) & 0xff)) \
+	}
 
 // buffer for receiving a single buffer
 static uint8_t recv_buf[10];
@@ -79,15 +91,19 @@ void comm_send_packet(
 		uint16_t data)
 {
 	packet_t packet = STATIC_PACKET_INIT(COMM_ADDRESS, dst, flags, reg, data);
+	dprintf("sending packet to %02x: ", dst);
+	for(int i = 0; i < 10; i++)
+		dprintf("%02x ", ((char *) &packet)[i]);
+	dprintf("\r\n");
 	uart_write((const char *) &packet, 10);
 }
 
 void comm_send_ok(const packet_t *request, uint16_t data){
-	comm_send_packet(request->src, (1 << COMM_FLAG_RESP), request->reg, data);
+	comm_send_packet(request->src, COMM_FLAG_RESP, request->reg, data);
 }
 
 void comm_send_error(const packet_t *request, uint16_t errno){
 	comm_send_packet(
-			request->src, (1 << COMM_FLAG_RESP) | (1 << COMM_FLAG_ERR),
+			request->src, COMM_FLAG_ERR,
 			request->reg, errno);
 }

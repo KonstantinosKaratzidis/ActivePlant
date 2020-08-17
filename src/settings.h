@@ -2,8 +2,11 @@
 #define ACTIVEPLANT_SETTINGS_H
 #include <stdint.h>
 #include "config.h"
+#include "comm.h"
 
 /*
+ * WARNING: THESE FUNCTIONS ARE NOT INTERRUPT SAFE !!!
+ *
  * Functions for getting and setting the settings of the unit,
  * including things like the wanted moisture level, watering interval
  * etc
@@ -13,7 +16,7 @@
  * blocking operations.
  *
  * The functions utilise avr-libc's implementation for reading from
- * and writing to the eeprom
+ * and writing to the eeprom.
  */
 
 // EEPROM_SIZE needs to be defined to ensure that all the values for
@@ -69,5 +72,11 @@ void settings_set_water_interval(uint32_t seconds);
 /* How often the unit should log its status. */
 uint32_t settings_get_log_interval();
 void settings_set_log_interval(uint32_t seconds);
+
+                                                  /* ==================== */
+                                                  /* Unit Protocl Address */
+                                                  /* ==================== */
+comm_addr_t settings_get_comm_address();
+void settings_set_comm_address(comm_addr_t addr);
 
 #endif // ACTIVEPLANT_SETTINGS_H

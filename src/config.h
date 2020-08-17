@@ -39,5 +39,19 @@
 // number of packets in the receiver queue
 #define COMM_QUEUE_ENTRIES 10
 #define COMM_ADDRESS 0xa0
+// if set to 1, it gives a full packet log
+
+#if DEBUG
+#define COMM_LOG_PACKET 1
+#else
+#define COMM_LOG_PACKET 0
+#endif
+
+// the time period for which the pump is held open
+#define PUMP_ON_MS 3000
+// time time period to wait for the soil moisture reading
+// to stabilize after having just watered the plant
+#define MOISTURE_STABILIZE_WAIT_MS 300000UL
+#define CONTROL_INITIAL_STATE STATE_INSPECTING
 
 #endif // ACTIVEPLANT_CONFIG_H
