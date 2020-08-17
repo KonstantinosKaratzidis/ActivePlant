@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "config.h"
 #include "callback.h"
 #include "moisture.h"
 #include "settings.h"
@@ -10,12 +11,13 @@
 typedef void (*comm_req_cb)(const packet_t*);
 
 void invalid_op_cb(const packet_t *req){
+	dprintf("invalid operation\r\n");
 	comm_send_error(req, COMM_ERR_INVAL_OP);
 }
 
 void ping_cb(const packet_t *req){
-	dprintf("got ping, send pong\r\n");
-	comm_send_packet(req->dst, (1 << COMM_FLAG_RESP), REG_PONG, 0);
+	dprintf("got PING, send PONG\r\n");
+	comm_send_packet(req->src, COMM_FLAG_RESP, REG_PING, 0);
 }
 
 void water_level_cb(const packet_t *req){
@@ -62,7 +64,6 @@ void log_interval_high_cb(const packet_t *req){
 
 comm_req_cb comm_callbacks[REG_NUM_REGS] = {
 	[REG_PING] = ping_cb,
-	[REG_PONG] = invalid_op_cb,
 	[REG_WATER_LEVEL] = water_level_cb,
 	[REG_MOISTURE] = moisture_cb,
 	[REG_MOISTURE_WANTED] = moisture_wanted_cb,
@@ -85,6 +86,19 @@ void process_request(const packet_t *req){
 		return;
 	}
 
+
+	#if COMM_LOG_PACKET
+	dprintf("recv: ");
+	for(int i = 0; i < 10; i++)
+		dprintf("0x%02x ", ((uint8_t *) req)[i]);
+	dprintf("\r\n");
+	dprintf("src=0x%02x (%d), ", req->src, req->src);
+	dprintf("dst=0x%02x (%d), ", req->dst, req->dst);
+	dprintf("flags=0x%02x (%d), ", req->flags, req->flags);
+	dprintf("reg=0x%02x (%d), ", req->reg, req->reg);
+	dprintf("data=0x%04x (%d)\r\n", req->data_high << 8 | req->data_low, req->data_high << 8 | req->data_low);
+	#endif
+
 	// if not addressed to us
 	if(req->dst != COMM_ADDRESS){
 		dprintf("packet not addressed to us\r\n");
@@ -98,6 +112,9 @@ void process_request(const packet_t *req){
 	}
 
 	comm_req_cb callback = comm_callbacks[req->reg];
+	// callback should not be null as we already checked that it is
+	// in the correct range, but just to be certain we check it
+	// (otherwise callback could end up being some interrupt vector)
 	if(callback == NULL){
 		dprintf("callback undefined\r\n");
 		return comm_send_error(req, COMM_ERR_UNKNOWN);
