@@ -1,8 +1,10 @@
+#include <stdint.h>
 #include <stdlib.h>
 #include "config.h"
 #include "callback.h"
 #include "moisture.h"
 #include "settings.h"
+#include "periodic.h"
 #include "debug.h"
 
 #define WARN_UNIMPLEMENTED() {dprintf("UNIMPLEMTED %s %d\r\n", __FILE__, __LINE__);} while(0)
@@ -21,6 +23,10 @@
 
 // callback executed upon receiving a packet
 typedef void (*comm_req_cb)(const packet_t*);
+
+static inline uint16_t get_data(const packet_t *packet){
+	return (packet->data_high << 8) | (packet->data_low);
+}
 
 void invalid_op_cb(const packet_t *req){
 	dprintf("invalid operation\r\n");
@@ -53,8 +59,16 @@ void moisture_wanted_cb(const packet_t *req){
 	comm_send_ok(req, wanted);
 }
 
+// For multipart writes the low part needs to be sent first
+// and then the high part. The write will have effect only after the
+// high part has been written
+// TODO: in the future, if there seems to be a need for more multipart
+// values, the code will need to be refactored into more reusable units
+
 void water_interval_cb(const packet_t *req){
+	static uint16_t low_part = 0;
 	dprintf("water inteval cb\r\n");
+
 	if(FLAG_IS_READ(req->flags)){
 		uint16_t value;
 		if(req->reg == REG_WATER_INTERVAL_LOW)
@@ -63,12 +77,32 @@ void water_interval_cb(const packet_t *req){
 			value = (settings_get_water_interval() >> 16) & 0xffff;
 		comm_send_ok(req, value);
 	} else {
-		dprintf("not implemented for write\r\n");
+		if(req->reg == REG_WATER_INTERVAL_LOW){
+			low_part = get_data(req);
+			comm_send_ok(req, low_part);
+		} else { // received the high part, change the interval
+			uint32_t new_value = ((uint32_t)get_data(req) << 16) | low_part;
+			
+			// the underlying communication unreliable, which means we may receive
+			// the same command more than 1 time. It is better to first check
+			// if the new value is actually different and not a repeated command,
+			// thus potentially avoiding an expensive eeprom update
+			if(new_value != settings_get_water_interval()){
+				settings_set_water_interval(new_value);
+				interval_set( // this will also reset the interval
+					INTERVAL_WATER,
+					millis_to_ticks(new_value * 1000)
+				);
+			}
+			comm_send_ok(req, get_data(req));
+		}
 	}
 }
 
 void log_interval_cb(const packet_t *req){
+	static uint16_t low_part = 0;
 	dprintf("log inteval cb\r\n");
+
 	if(FLAG_IS_READ(req->flags)){
 		uint16_t value;
 		if(req->reg == REG_LOG_INTERVAL_LOW)
@@ -77,7 +111,25 @@ void log_interval_cb(const packet_t *req){
 			value = (settings_get_log_interval() >> 16) & 0xffff;
 		comm_send_ok(req, value);
 	} else {
-		dprintf("not implemented for write\r\n");
+		if(req->reg == REG_LOG_INTERVAL_LOW){
+			low_part = get_data(req);
+			comm_send_ok(req, low_part);
+		} else { // received the high part, change the interval
+			uint32_t new_value = ((uint32_t)get_data(req) << 16) | low_part;
+			
+			// the underlying communication unreliable, which means we may receive
+			// the same command more than 1 time. It is better to first check
+			// if the new value is actually different and not a repeated command,
+			// thus potentially avoiding an expensive eeprom update
+			if(new_value != settings_get_log_interval()){
+				settings_set_log_interval(new_value);
+				interval_set( // this will also reset the interval
+					INTERVAL_LOG,
+					millis_to_ticks(new_value * 1000)
+				);
+			}
+			comm_send_ok(req, get_data(req));
+		}
 	}
 }
 
