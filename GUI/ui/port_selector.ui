@@ -1,17 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <class>portSelector</class>
+ <widget class="QDialog" name="portSelector">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>531</width>
-    <height>121</height>
+    <width>400</width>
+    <height>120</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
+  </property>
+  <property name="sizeGripEnabled">
+   <bool>false</bool>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="topMargin">
@@ -53,12 +59,21 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QComboBox" name="comboBox">
+       <widget class="QComboBox" name="portsComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="editable">
+         <bool>false</bool>
+        </property>
+        <property name="currentText">
+         <string>---</string>
+        </property>
+        <property name="placeholderText">
+         <string>---</string>
         </property>
        </widget>
       </item>
