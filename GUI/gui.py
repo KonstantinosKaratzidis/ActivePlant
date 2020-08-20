@@ -1,124 +1,154 @@
+from PyQt5.QtWidgets import QApplication, QMainWindow
+from generated.main_window import Ui_MainWindow
+from port_selector import PortSelector
+from fatal import FatalMessage
+from plant import Plant, import_plants
+from proto import PlantConnection, ResponseTimeout
+from settings import Settings
+import time
+from serial import Serial
+from serial.tools.list_ports import comports
 from sys import argv
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
 
-class PlantList(QWidget):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._layout = QGridLayout()
+MAX_MOISTURE = 1024
+MAX_WATER_LEVEL = 4
 
-        # plants list widget
-        self._plants = QListWidget()
-        self._plants.addItem("Item 1")
-        self._plants.addItem("Item 2")
-        self._plants.addItem("Item 3")
-        self._plants.addItem("Item 4")
-        self._plants.addItem("Item 5")
-        self._plants.addItem("Item 6")
-        self._plants.addItem("Item 7")
-
-        # controls
-        controls = QWidget()
-
-        add_button = QPushButton()
-        add_button.setText("Add")
-        remove_button = QPushButton()
-        remove_button.setText("Remove")
-
-        controls_layout = QGridLayout()
-        controls_layout.addWidget(add_button)
-        controls_layout.addWidget(remove_button)
-        controls.setLayout(controls_layout)
-
-        self._layout.addWidget(self._plants)
-        self._layout.addWidget(controls)
-
-        self.setLayout(self._layout)
-
-class PlantInfo(QWidget):
+class MainWindow(QMainWindow):
     def __init__(self, *args):
         super().__init__(*args)
-        self._layout = QGridLayout()
+        self.conn = None
+        self.plants = import_plants()
+        self._window = Ui_MainWindow()
+        self._window.setupUi(self)
 
-        info_box = QWidget(self)
-        info_box_layout = QGridLayout()
-        info_box_layout.setHorizontalSpacing(30)
+        self.rightColumn = self._window.rightColumn
+        self.leftColumn = self._window.leftColumn
+        self.connectionLabel = self._window.statusLabel
 
-        info_box_layout.addWidget(QLabel("Soil Moisture"), 0, 0)
-        info_box_layout.addWidget(QLabel("70%"), 0, 1)
+        self.waterBar = self._window.waterLevelBar
+        self.moistureBar = self._window.moistureLevelBar
+        self._set_ranges()
+        self.set_water(0)
+        self.set_moisture(0)
 
-        info_box_layout.addWidget(QLabel("Target Moisture Level"), 1, 0)
-        info_box_layout.addWidget(QLabel("80 %"), 1, 1)
+        self.plantsList = self._window.plantsList
 
-        info_box_layout.addWidget(QLabel("Watering plan"), 2, 0)
-        info_box_layout.addWidget(QLabel("Periodic: 7 days, 2 hours"), 2, 1)
+        self.currentPlant = None
+        self.set_disconnected()
 
-        info_box_layout.addWidget(QLabel("Tank Water Level"), 3, 0)
-        info_box_layout.addWidget(QLabel("25 %"), 3, 1)
-        info_box.setLayout(info_box_layout)
+        self.set_plants()
+        self.plantsList.currentRowChanged.connect(self.set_selected_plant)
+        self._window.refreshButton.clicked.connect(self.set_selected_plant)
+        self._window.changeSettingsButton.clicked.connect(self.changeSettings)
 
-        self._layout.addWidget(QLabel("Plant Status"), 0, 0)
-        self._layout.addWidget(info_box, 1, 0)
+        self.targetMoisture = 0
+        self.waterInterval = 0
 
-        self._layout.addWidget(QLabel("Placeholder Plant Water level icon"))
+    def setConnection(self, plantConnection):
+        self.conn = plantConnection
 
-        settings_button = QPushButton()
-        settings_button.setText("Change settings")
-        self._layout.addWidget(settings_button)
+    def _set_ranges(self):
+        self.waterBar.setMaximum(MAX_WATER_LEVEL)
+        self.moistureBar.setMaximum(MAX_MOISTURE)
 
-        self.setLayout(self._layout)
+    def changeSettings(self):
+        dialog = Settings(self.targetMoisture, self.waterInterval, self)
+        dialog.settingsChanged.connect(self.setNewSettings)
+        dialog.show()
 
-class PlantWindow(QWidget):
+    def setNewSettings(self, target_moisture, water_interval):
+        index = self.plantsList.currentRow()
+        plant = self.plants[index]
+        print("set new settings", hex(plant.address), target_moisture, water_interval)
+        self.set_disconnected()
+
+        try:
+            self.conn.write_moisture_wanted(plant.address, target_moisture)
+            self.conn.write_water_interval(plant.address, water_interval)
+
+            self.set_selected_plant(index)
+            self.set_connected()
+        except ResponseTimeout:
+            print("Failed to set new settings")
+            self.set_disconnected()
+
+
+    def set_water(self, value):
+        self.moistureBar.setValue(value)
+
+    def set_moisture(self, value):
+        self.moistureBar.setValue(value)
+
+    def set_target_moisture(self, target_moisture):
+        self._window.targetMoistureLabel.setText(str(target_moisture))
+        self.targetMoisture = target_moisture
+
+    def set_water_interval(self, water_interval):
+        self._window.wateringMethodLabel.setText(str(water_interval))
+        self.waterInterval = water_interval
+    
+    def set_status(self, water_level, moisture_level, target_moisture, water_interval):
+        self.set_water(water_level)
+        self.set_moisture(moisture_level)
+        self.set_target_moisture(target_moisture)
+        self.set_water_interval(water_interval)
+
+    def set_connected(self):
+        self.rightColumn.setEnabled(True)
+        self.connectionLabel.setText("Connected")
+        self.connectionLabel.setStyleSheet("QLabel {color : green;}")
+
+    def set_disconnected(self):
+        self.rightColumn.setEnabled(False)
+        self.connectionLabel.setText("Disconnected")
+        self.connectionLabel.setStyleSheet("QLabel {color : red;}")
+
+    def set_plants(self):
+        for plant in self.plants:
+            self.plantsList.addItem(plant.name)
+
+    def set_selected_plant(self, index):
+        plant = self.plants[index]
+        self.currentPlant = plant
+        try:
+            self.conn.ping(plant.address)
+            moisture = self.conn.read_moisture(plant.address)
+            water_level = self.conn.read_water_level(plant.address)
+            target_moisture = self.conn.read_moisture_wanted(plant.address)
+            water_interval = self.conn.read_water_interval(plant.address)
+            self.set_status(water_level, moisture, target_moisture, water_interval)
+            self.set_connected()
+        except ResponseTimeout:
+            print("Failed to ping device")
+            self.set_disconnected()
+
+
+class App(QApplication):
     def __init__(self, *args):
         super().__init__(*args)
-        col_layout = QGridLayout()
-        plant_info = PlantInfo(self)
+        plants = [Plant("Plant 1", 0xa0), Plant("Plant 2", 0xb0)]
 
-class PlantSettings(QDialog):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.setModal(True)
+        available_ports = list([port.device for port in comports()])
 
+        #self.portSelector = PortSelector(available_ports)
+        #self.portSelector.show()
 
-        form = QWidget(self)
-        form_layout = QFormLayout(form)
-        form_layout.addRow(QLabel("Target Moisture:"), QSlider(Qt.Horizontal))
-        form_layout.addRow(QLabel("Period:"), QLineEdit())
+        #self.portSelector.portSelected.connect(self.set_port)
+        #self.portSelector.canceled.connect(self.quit)
 
-        settings_layout = QGridLayout(self)
-        settings_layout.addWidget(form, 0, 0, 1, 2)
+        self.main_win = MainWindow()
+        self.set_port("/dev/ttyUSB0")
 
-        settings_layout.addWidget(QPushButton("Apply"))
-        settings_layout.addWidget(QPushButton("Cancel"))
-
-        self.setLayout(settings_layout)
-        
-class GuiWindow(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setGeometry(0, 0, 600, 400)
-        self.setWindowTitle("ActivePlant")
-
-        layout = QGridLayout()
-        layout.addWidget(PlantList(self), 0, 0)
-        layout.addWidget(PlantWindow(), 0, 1)
-        layout.setColumnStretch(1, 1)
-        self.setLayout(layout)
-        self.set_center()
-        PlantSettings(self).show()
-
-    def set_center(self):
-        qtRectangle = self.frameGeometry()
-        centerPoint = QDesktopWidget().availableGeometry().center()
-        qtRectangle.moveCenter(centerPoint)
-        self.move(qtRectangle.topLeft())
-
-def main():
-    app = QApplication(argv)
-    win = GuiWindow()
-    win.show()
-    app.exec_()
+    def set_port(self, portName):
+        #self.portSelector.close()
+        connection = PlantConnection(0x01, Serial(portName, timeout = 2), 2)
+        self.main_win.show()
+        self.main_win.setConnection(connection)
 
 if __name__ == "__main__":
-    main()
+    #app = App(argv)
+    #app.exec_()
+
+    port = Serial("/dev/ttyUSB0", timeout = 2)
+    conn = PlantConnection(1, port, 2)
+    print(conn.read_moisture_wanted(0xa0))

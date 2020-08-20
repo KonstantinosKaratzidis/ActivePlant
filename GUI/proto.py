@@ -107,13 +107,12 @@ class Register:
             return value & 0xffffffff == value
 
 class Connection:
-    def __init__(self, address, unit_address, serial_port, timeout = TIMEOUT):
-        self.own_addr = address
-        self.unit_addr = unit_address
+    def __init__(self, own_address, serial_port, timeout = TIMEOUT):
+        self.own_addr = own_address
         self.port = serial_port
         self.timeout = timeout
 
-    def read(self, register):
+    def read(self, unit_address, register):
         if register.is_multipart():
             resp_low = self.send(register.addresses[0])
             resp_high = self.send(register.addresses[1])
@@ -121,11 +120,11 @@ class Connection:
             return resp_high << 16 | resp_low
 
         else:
-            resp = self.send(register.addresses[0])
+            resp = self.send(unit_address, register.addresses[0])
             print("single read", resp)
+            return resp
         
-
-    def write(self, register, value):
+    def write(self, unit_address, register, value):
         if not register.is_writable():
             raise RegisterNotWritable()
 
@@ -134,18 +133,22 @@ class Connection:
             raise ValueError(msg)
 
         if register.is_multipart():
-            resp_low = self.send(register.addresses[0], True, value & 0xffff)
-            resp_high = self.send(register.addresses[1], True, (value >> 16) & 0xffff)
+            print("send in two parts", hex(unit_address))
+            resp_low = self.send(unit_address, register.addresses[0], True, value & 0xffff)
+            resp_high = self.send(unit_address, register.addresses[1], True, (value >> 16) & 0xffff)
             print("multipart write", resp_low, resp_high)
 
         else:
-            resp = self.send(register.addresses[0], True, value)
+            resp = self.send(unit_address, register.addresses[0], True, value)
             print("single write", resp)
+            return resp
 
-    def send(self, address, write = False, data = 0):
+    def send(self, unit_address, address, write = False, data = 0):
+        print("send", hex(unit_address))
         flags = FLAG_RW if write else 0
-        req = Packet(self.own_addr, self.unit_addr, flags, address, data)
+        req = Packet(self.own_addr, unit_address, flags, address, data)
         raw = req.encode()
+        print(raw)
 
         awaiting_resp = True
         start = time.time()
@@ -180,13 +183,57 @@ class Connection:
 
         return resp.data
 
-# registers
-REG_PING = Register("PING", False, [0])
-REG_WATER_LEVEL = Register("WATER_LEVEL", False, [1])
-REG_MOISTURE = Register("MOISTURE", False, [2])
-REG_MOISTURE_WANTED = Register("WANTED_MOISTURE", True, [3])
-REG_WATER_INTERVAL = Register("WATER_INTERVAL", True, [4, 5])
-REG_LOG_INTERVAL = Register("LOG_INTERVAL", True, [6, 7])
+# func decorator
+def with_max_tries(func):
+    def wrapped(*args, **kwargs):
+        for i in range(5):
+            try:
+                return func(*args, **kwargs)
+            except ResponseTimeout:
+                pass
+        raise ResponseTimeout
+    return wrapped
+
+class PlantConnection(Connection):
+    # registers
+    REG_PING = Register("PING", False, [0])
+    REG_WATER_LEVEL = Register("WATER_LEVEL", False, [1])
+    REG_MOISTURE = Register("MOISTURE", False, [2])
+    REG_MOISTURE_WANTED = Register("WANTED_MOISTURE", True, [3])
+    REG_WATER_INTERVAL = Register("WATER_INTERVAL", True, [4, 5])
+    REG_LOG_INTERVAL = Register("LOG_INTERVAL", True, [6, 7])
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.max_retries = 5
+
+    @with_max_tries
+    def ping(self, unit_address):
+        return self.read(unit_address, self.REG_PING)
+
+    @with_max_tries
+    def read_moisture(self, unit_address):
+        return self.read(unit_address, self.REG_MOISTURE)
+
+    @with_max_tries
+    def read_moisture_wanted(self, unit_address):
+        return self.read(unit_address, self.REG_MOISTURE_WANTED)
+
+    @with_max_tries
+    def read_water_level(self, unit_address):
+        return self.read(unit_address, self.REG_MOISTURE_WANTED)
+
+    @with_max_tries
+    def read_water_interval(self, unit_address):
+        return self.read(unit_address, self.REG_MOISTURE_WANTED)
+
+    @with_max_tries
+    def write_moisture_wanted(self, unit_address, target_moisture):
+        return self.write(unit_address, self.REG_MOISTURE_WANTED, target_moisture)
+
+    @with_max_tries
+    def write_water_interval(self, unit_address, water_interval):
+        return self.write(unit_address, self.REG_WATER_INTERVAL, water_interval)
 
 # make sure the Packet class encodes the packets to 'bytes' object
 # of the correct length (10)
@@ -197,14 +244,12 @@ if struct.calcsize(Packet._struct_fmt) != PACKET_LENGTH:
 
 if __name__ == "__main__":
     import serial
-    port = serial.Serial("/dev/ttyUSB1", 9600, timeout = 1)
-    conn = Connection(0x01, 0xa0, port)
+    port = serial.Serial("/dev/ttyUSB0", 9600, timeout = 1)
+    conn = PlantConnection(0x01, port)
 
-    print(REG_LOG_INTERVAL.is_multipart())
-    print(REG_LOG_INTERVAL.check_in_range(70000))
     while True:
         try:
-            print(conn.read(REG_LOG_INTERVAL))
+            print(conn.ping(0xa0))
             break
         except ResponseTimeout:
             print("timeout, retrying ...")
