@@ -35,6 +35,7 @@ void log_status(){}
 int main(){
 	init();
 	enable_interrupts();
+	dprintf("initialization done\r\n");
 
 	packet_t msg;
 	while(1){ 

@@ -132,9 +132,15 @@ static void moisture_cb(const packet_t *req){
 }
 
 static void moisture_wanted_cb(const packet_t *req){
-	uint16_t wanted = settings_get_moisture_wanted();
-	dprintf("moisture wanted: %d\r\n", wanted);
-	comm_send_ok(req, wanted);
+	if(FLAG_IS_READ(req->flags)){
+		uint16_t wanted = settings_get_moisture_wanted();
+		dprintf("moisture wanted: %d\r\n", wanted);
+		comm_send_ok(req, wanted);
+	} else {
+		uint16_t new_value = get_data(req);
+		settings_set_moisture_wanted(new_value);
+		comm_send_ok(req, new_value);
+	}
 }
 
 // TODO: in the future, if there seems to be a need for more multipart
@@ -164,13 +170,12 @@ static void water_interval_cb(const packet_t *req){
 			// the same command more than 1 time. It is better to first check
 			// if the new value is actually different and not a repeated command,
 			// thus potentially avoiding an expensive eeprom update
-			if(new_value != settings_get_water_interval()){
-				settings_set_water_interval(new_value);
-				interval_set( // this will also reset the interval
-					INTERVAL_WATER,
-					millis_to_ticks(new_value * 1000)
-				);
-			}
+			dprintf(" --- set new value: %lu \r\n", new_value);
+			settings_set_water_interval(new_value);
+			interval_set( // this will also reset the interval
+				INTERVAL_WATER,
+				millis_to_ticks(new_value * 1000)
+			);
 			comm_send_ok(req, get_data(req));
 		}
 	}
