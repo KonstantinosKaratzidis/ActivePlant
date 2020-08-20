@@ -130,25 +130,20 @@ class App(QApplication):
 
         available_ports = list([port.device for port in comports()])
 
-        #self.portSelector = PortSelector(available_ports)
-        #self.portSelector.show()
+        self.portSelector = PortSelector(available_ports)
+        self.portSelector.show()
 
-        #self.portSelector.portSelected.connect(self.set_port)
-        #self.portSelector.canceled.connect(self.quit)
+        self.portSelector.portSelected.connect(self.set_port)
+        self.portSelector.canceled.connect(self.quit)
 
         self.main_win = MainWindow()
-        self.set_port("/dev/ttyUSB0")
 
     def set_port(self, portName):
-        #self.portSelector.close()
+        self.portSelector.close()
         connection = PlantConnection(0x01, Serial(portName, timeout = 2), 2)
         self.main_win.show()
         self.main_win.setConnection(connection)
 
 if __name__ == "__main__":
-    #app = App(argv)
-    #app.exec_()
-
-    port = Serial("/dev/ttyUSB0", timeout = 2)
-    conn = PlantConnection(1, port, 2)
-    print(conn.read_moisture_wanted(0xa0))
+    app = App(argv)
+    app.exec_()
