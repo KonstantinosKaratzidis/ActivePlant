@@ -3,7 +3,7 @@ Automatic plant caring using ble
 
 This repository contains the source code for the project
 created during the summer of 2020 as part of the Protopaja
-(Protytype Workshop) course at Aalto University, Finland.
+(Prototype Workshop) course at Aalto University, Finland.
 
 ## The project
 
